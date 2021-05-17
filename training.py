@@ -4,6 +4,8 @@ from keras.datasets import mnist
 import numpy as np
 from typing import List, Optional
 import torch
+from loss import *
+import torch.optim as optim
 
 
 mnist_data = mnist.load_data()
@@ -67,6 +69,29 @@ from model import DigitDetectionModel
 input = get_random_canvas().get_torch_tensor()
 x = DigitDetectionModel()(input)
 
-target = TargetDecoder()
-print(target.get_predictions(x))
-print(target.get_targets(get_random_canvas(), x.anchors, iou_threshold=0.5, nb_of_classes=10).matched_anchors)
+
+
+def train():
+        model = DigitDetectionModel()
+        optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+        rloss = RetinaLoss()
+        acc = DigitAccuracy()
+        target = TargetDecoder()
+
+        for epoch in range(20):
+            canvas = get_random_canvas()
+            optimizer.zero_grad()
+            outputs = model(canvas.get_torch_tensor())
+            acc = acc.compute_metric(target.get_predictions(model), canvas)
+            loss = rloss.compute_loss(model, target.get_targets(canvas, model.anchors, iou_threshold=0.5, nb_of_classes=10))
+
+            print('treningowe accuracy:', acc)
+            print('loss', loss)
+            loss.backward()
+            optimizer.step()
+            acc_add = 0
+            
+
+train()
+    
