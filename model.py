@@ -1,0 +1,103 @@
+import torch.nn as nn
+from typing import List
+from canvas import MnistBox, MnistCanvas
+import torch
+
+
+ANCHOR_SIZES = [16,19]
+
+class NetConv(nn.Module):
+    def __init__(self):
+        super(NetConv, self).__init__()
+        modules = []
+
+        modules.append(nn.Conv2d(1, 16, 3, padding=1))
+        modules.append(nn.BatchNorm2d(16))
+        modules.append(nn.ReLU())
+        modules.append(nn.MaxPool2d(2))
+
+        modules.append(nn.Conv2d(16, 50, 3, padding=1))
+        modules.append(nn.BatchNorm2d(50))
+        modules.append(nn.ReLU())
+        modules.append(nn.MaxPool2d(2))
+
+        self.layers = nn.Sequential(*modules)
+
+    def forward(self, x):
+        x = self.layers(x)
+
+        return x
+
+import torch.nn as nn
+
+
+class Reshape(nn.Module):
+    def __init__(self, *args):
+        super(Reshape, self).__init__()
+        self.shape = args
+
+    def forward(self, x):
+        return x.view((x.shape[0],) + self.shape)
+
+class ClassificationHead(nn.Module):
+    def __init__(self, anchors_number):
+        super(ClassificationHead, self).__init__()
+        modules = []
+        modules.append(nn.Flatten())
+        modules.append(nn.Linear(32*32*50, anchors_number*10))
+        modules.append(Reshape(anchors_number,10))
+        #modules.append(nn.Softmax(dim=2))
+
+
+        self.layers = nn.Sequential(*modules)
+
+    def forward(self, x):
+        x = self.layers(x)
+
+        return x
+
+class BoxRegressionHead(nn.Module):
+    def __init__(self, anchors_numbers):
+        super(BoxRegressionHead, self).__init__()
+        modules = []
+        modules.append(nn.Flatten())
+        modules.append(nn.Linear(32*32*50, anchors_numbers*4))
+        modules.append(Reshape(anchors_numbers, 4))
+        self.layers = nn.Sequential(*modules)
+
+    def forward(self, x):
+        x = self.layers(x)
+
+        return x
+
+class DigitDetectionModelOutput:
+
+    def __init__(
+        self,
+        anchors: List[MnistBox],
+        classification_output: torch.Tensor,
+        box_regression_output: torch.Tensor,
+    ):
+        self.anchors = anchors
+        self.classification_output = classification_output
+        self.box_regression_output = box_regression_output
+
+
+class DigitDetectionModel(torch.nn.Module):
+    # Should use ANCORS_SIZES
+    anchors = []
+    def __init__(
+        self,
+    ):
+        super().__init__()
+        for n in range(0, 128//4-1):
+          for m in range(0, 128//4-1):
+              self.anchors.append(MnistBox(m*4 - ANCHOR_SIZES[0]/2, n*4 - ANCHOR_SIZES[1]/2, m*4 + ANCHOR_SIZES[1]/2, n*4+ANCHOR_SIZES[0]/2))
+
+    def forward(self, x: MnistCanvas) -> DigitDetectionModelOutput:
+        out = NetConv()(x).permute(0,2,3,1)
+        classification_target = ClassificationHead(len(self.anchors))(out)
+        box_regression_output = BoxRegressionHead(len(self.anchors))(out)
+
+        return DigitDetectionModelOutput(self.anchors, classification_target, box_regression_output)
+
