@@ -80,7 +80,7 @@ TEST_CANVAS = [
 
 
 
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+DEVICE = 'cpu'
 
 
 import torch.optim as optim
@@ -98,21 +98,23 @@ acc_add = 0
 
 
 
-for epoch in range(100):
-    optimizer.zero_grad()
-    canvas = get_random_canvas()
+for epoch in range(1):
+    batch_size = 200
+    for i in range(batch_size):
+        optimizer.zero_grad()
+        canvas = get_random_canvas()
 
-    outputs = model(canvas.get_torch_tensor())
-    acc_value = acc.compute_metric(target.get_predictions(outputs), canvas)
+        outputs = model(canvas.get_torch_tensor())
+        acc_value = acc.compute_metric(target.get_predictions(outputs), canvas)
 
-    targets = target.get_targets(canvas, outputs.anchors, iou_threshold=0.5, nb_of_classes=10)
-    loss = rloss.compute_loss(outputs, targets)
+        targets = target.get_targets(canvas, outputs.anchors, iou_threshold=0.5, nb_of_classes=10)
+        loss = rloss.compute_loss(outputs, targets)
 
-    print('treningowe accuracy:', acc_value)
-    print('loss', loss)
-    loss.backward()
-    optimizer.step()
-    acc_add+=acc_value
+        print('treningowe accuracy:', acc_value)
+        print('loss', loss)
+        loss.backward()
+        optimizer.step()
+        acc_add+=acc_value
 
     acc_valid = 0
     with torch.no_grad():
