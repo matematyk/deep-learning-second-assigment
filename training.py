@@ -6,6 +6,7 @@ from typing import List, Optional
 import torch
 from loss import *
 import torch.optim as optim
+from model import DigitDetectionModel
 
 
 mnist_data = mnist.load_data()
@@ -64,13 +65,9 @@ def get_random_canvas(
 
 ANCHOR_SIZES = [16,19]
 
-from model import DigitDetectionModel
-
-input = get_random_canvas().get_torch_tensor()
-x = DigitDetectionModel()(input)
 
 
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+DEVICE = 'cpu'
 
 import torch.optim as optim
 
@@ -90,7 +87,7 @@ for epoch in range(2):
 
     optimizer.zero_grad()
 
-    outputs = model(canvas)
+    outputs = model(canvas.get_torch_tensor())
     acc_value = acc.compute_metric(target.get_predictions(outputs), canvas)
 
     targets = target.get_targets(canvas, outputs.anchors, iou_threshold=0.5, nb_of_classes=10)

@@ -90,12 +90,13 @@ class DigitDetectionModel(torch.nn.Module):
         self,
     ):
         super().__init__()
+        self.netconv = NetConv()
         for n in range(0, 128//4-1):
           for m in range(0, 128//4-1):
               self.anchors.append(MnistBox(m*4 - ANCHOR_SIZES[0]/2, n*4 - ANCHOR_SIZES[1]/2, m*4 + ANCHOR_SIZES[1]/2, n*4+ANCHOR_SIZES[0]/2))
 
     def forward(self, x: MnistCanvas) -> DigitDetectionModelOutput:
-        out = NetConv()(x).permute(0,2,3,1)
+        out = self.netconv(x).permute(0,2,3,1)
         classification_target = ClassificationHead(len(self.anchors))(out)
         box_regression_output = BoxRegressionHead(len(self.anchors))(out)
 
