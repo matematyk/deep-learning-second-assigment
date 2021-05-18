@@ -42,7 +42,7 @@ class Reshape(nn.Module):
 class ClassificationHead(nn.Module):
     def __init__(self, anchors_number):
         super(ClassificationHead, self).__init__()
-        modules = []
+        modules = nn.ModuleList()
         modules.append(nn.Flatten())
         modules.append(nn.Linear(32*32*50, anchors_number*10))
         modules.append(Reshape(anchors_number,10))
@@ -59,7 +59,7 @@ class ClassificationHead(nn.Module):
 class BoxRegressionHead(nn.Module):
     def __init__(self, anchors_numbers):
         super(BoxRegressionHead, self).__init__()
-        modules = []
+        modules = nn.ModuleList()
         modules.append(nn.Flatten())
         modules.append(nn.Linear(32*32*50, anchors_numbers*4))
         modules.append(Reshape(anchors_numbers, 4))
