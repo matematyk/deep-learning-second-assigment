@@ -15,7 +15,6 @@ class RetinaLoss:
     ) -> Optional[torch.Tensor]: 
         loss_box_regression = 0
         loss_classification = 0 
-        #for anchor_index in model_target.matched_anchors: @TODO do zmiany na wielu batch.
         test = SmoothL1Loss()
         loss_box_regression += test(model_output.box_regression_output[0], model_target.box_regression_target)
         loss_classification += sigmoid_focal_loss(model_output.classification_output[0], model_target.classification_target, reduction='mean') 
@@ -35,15 +34,14 @@ class DigitAccuracy:
     ):
         for box in canvas.boxes:
           find = False
-          #bijection
           for pbox in predicted_boxes:
             if box.iou_with(pbox) > 0.5 and box.class_nb == pbox.class_nb:
-              if find: #not injection
+              if find: 
                 return 0
               find = True
         if len(canvas.boxes) == len(predicted_boxes):
           return 1
-        # not bijection
+
         return 0
 
               

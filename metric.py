@@ -34,13 +34,11 @@ class TargetDecoder:
             if box_a.iou_with(anchors[i]) >= iou_threshold:
               accept.append({'box':box_a, 'iou': box_a.iou_with(anchors[i])})
               matched_anchors.append(i)
-          #pobaramy indeks najlepszego iou
           if len(accept) > 0:
             naj_ind = 0
             for j in range(len(accept)):
                 if accept[j]['iou'] > accept[naj_ind]['iou']:
                   naj_ind = j
-            #anchor cos ma 
             classification_target[naj_ind, accept[naj_ind]['box'].class_nb] = 1
             box_regression_target[naj_ind, 0] = accept[naj_ind]['box'].x_min - anchors[i].x_min
             box_regression_target[naj_ind, 1] = accept[naj_ind]['box'].x_max - anchors[i].x_max
@@ -60,8 +58,6 @@ class TargetDecoder:
         scores = torch.zeros(len(model_output.anchors))
         boxes = torch.zeros([len(model_output.anchors), 4])
         scores,_ = torch.max(model_output.classification_output[0], dim=1)
-        print(scores.shape)
-        exit(-1)
         for i in range(len(model_output.anchors)):
           boxes[i,0] = model_output.anchors[i].x_min - model_output.box_regression_output[0][i][0]
           boxes[i,1] = model_output.anchors[i].y_min - model_output.box_regression_output[0][i][2]
@@ -71,6 +67,6 @@ class TargetDecoder:
         indexes = torchvision.ops.nms(boxes, scores, 0.5)
         out_list = []
         for index in indexes:
-          out_list.append(MnistBox(x_min=boxes[index,0],x_max =boxes[index,2],y_min=boxes[index,1], y_max=boxes[index,3], class_nb=torch.argmax(model_output.classification_output[0][index])))
-
+          out_list.append(MnistBox(x_min=boxes[index,0],x_max=boxes[index,2],y_min=boxes[index,1], y_max=boxes[index,3], class_nb=torch.argmax(model_output.classification_output[0][index])))
+  
         return out_list

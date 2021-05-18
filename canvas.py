@@ -143,7 +143,6 @@ class MnistCanvas:
     def plot(self, boxes: Optional[List[MnistBox]] = None):
         fig, ax = plt.subplots()
         ax.imshow(self.image)
-        print(self.image.shape)
         boxes = boxes or self.boxes
         for box in boxes:
             box.plot_on_ax(ax)

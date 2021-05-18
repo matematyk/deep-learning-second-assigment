@@ -65,16 +65,30 @@ def get_random_canvas(
 
 ANCHOR_SIZES = [16,19]
 
+TEST_CANVAS_SIZE = 256
+TEST_SEED = 42 # DO NOT CHANGE THIS LINE.
+
+np.random.seed(TEST_SEED)
+
+TEST_CANVAS = [
+    get_random_canvas(
+        digits=TEST_DIGITS,
+        classes=TEST_CLASSES,
+    )
+    for _ in range(TEST_CANVAS_SIZE)
+]
 
 
-DEVICE = 'cpu'
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 import torch.optim as optim
 
 model = DigitDetectionModel()
 model.to(DEVICE)
 
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
 
 rloss = RetinaLoss()
 acc = DigitAccuracy()
@@ -82,10 +96,11 @@ target = TargetDecoder()
 
 acc_add = 0
 
-for epoch in range(2):
-    canvas = get_random_canvas()
 
+
+for epoch in range(100):
     optimizer.zero_grad()
+    canvas = get_random_canvas()
 
     outputs = model(canvas.get_torch_tensor())
     acc_value = acc.compute_metric(target.get_predictions(outputs), canvas)
@@ -93,15 +108,21 @@ for epoch in range(2):
     targets = target.get_targets(canvas, outputs.anchors, iou_threshold=0.5, nb_of_classes=10)
     loss = rloss.compute_loss(outputs, targets)
 
-    print('treningowe accuracy:', acc)
+    print('treningowe accuracy:', acc_value)
     print('loss', loss)
     loss.backward()
-    print("ayay")
     optimizer.step()
-    print("no tu nas raczej nie bedzie")
     acc_add+=acc_value
 
-            
+    acc_valid = 0
+    with torch.no_grad():
+        for canvas in TEST_CANVAS:
+            outputs = model(canvas.get_torch_tensor())
+            acc_value = acc.compute_metric(target.get_predictions(outputs), canvas)
+            loss = rloss.compute_loss(outputs, targets)
+            print('valid_loss', loss)
+            print('acc_loss', acc_value)
+            acc_valid += acc_value
 
     print('Accuracy of the network on the {} test images: {} %'.format(
-        1, acc_add))
+        1, acc_valid))
