@@ -39,11 +39,11 @@ class TargetDecoder:
             for j in range(len(accept)):
                 if accept[j]['iou'] > accept[naj_ind]['iou']:
                   naj_ind = j
-            classification_target[naj_ind, accept[i]['box'].class_nb] = 1
-            box_regression_target[naj_ind, 0] = accept[i]['box'].x_min - anchors[i].x_min
-            box_regression_target[naj_ind, 1] = accept[i]['box'].x_max - anchors[i].x_max
-            box_regression_target[naj_ind, 2] = accept[i]['box'].y_min - anchors[i].y_min
-            box_regression_target[naj_ind, 3] = accept[i]['box'].y_max - anchors[i].y_max
+            classification_target[i, accept[naj_ind]['box'].class_nb] = 1
+            box_regression_target[i, 0] = accept[naj_ind]['box'].x_min - anchors[i].x_min
+            box_regression_target[i, 1] = accept[naj_ind]['box'].x_max - anchors[i].x_max
+            box_regression_target[i, 2] = accept[naj_ind]['box'].y_min - anchors[i].y_min
+            box_regression_target[i, 3] = accept[naj_ind]['box'].y_max - anchors[i].y_max
 
 
         return DigitDetectionModelTarget(classification_target, box_regression_target, matched_anchors)
