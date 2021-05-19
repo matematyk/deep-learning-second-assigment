@@ -57,16 +57,17 @@ class TargetDecoder:
     ) -> List[MnistBox]:
         scores = torch.zeros(len(model_output.anchors))
         boxes = torch.zeros([len(model_output.anchors), 4])
-        scores,_ = torch.max(model_output.classification_output[0], dim=1)
-        for i in range(len(model_output.anchors)):
-          boxes[i,0] = model_output.anchors[i].x_min - model_output.box_regression_output[0][i][0]
-          boxes[i,1] = model_output.anchors[i].y_min - model_output.box_regression_output[0][i][2]
-          boxes[i,2] = model_output.anchors[i].x_max - model_output.box_regression_output[0][i][1]
-          boxes[i,3] = model_output.anchors[i].y_max - model_output.box_regression_output[0][i][3]
 
+        scores,_ = torch.max(model_output.classification_output, dim=1)
+    
+        for i in range(len(model_output.anchors)):
+          boxes[i,0] = model_output.anchors[i].x_min - model_output.box_regression_output[i][0]
+          boxes[i,1] = model_output.anchors[i].y_min - model_output.box_regression_output[i][2]
+          boxes[i,2] = model_output.anchors[i].x_max - model_output.box_regression_output[i][1]
+          boxes[i,3] = model_output.anchors[i].y_max - model_output.box_regression_output[i][3]
         indexes = torchvision.ops.nms(boxes, scores, 0.5)
         out_list = []
         for index in indexes:
-          out_list.append(MnistBox(x_min=boxes[index,0],x_max=boxes[index,2],y_min=boxes[index,1], y_max=boxes[index,3], class_nb=torch.argmax(model_output.classification_output[0][index])))
+          out_list.append(MnistBox(x_min=boxes[index,0],x_max=boxes[index,2],y_min=boxes[index,1], y_max=boxes[index,3], class_nb=torch.argmax(model_output.classification_output[index])))
   
         return out_list

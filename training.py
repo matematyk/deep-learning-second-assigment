@@ -88,14 +88,18 @@ import torch.optim as optim
 model = DigitDetectionModel()
 model.to(DEVICE)
 
-optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+optimizer = optim.Adam(model.parameters(), lr=0.1)
+#@TODO, 
+#zbieranie gradientu z wielu sampli
+# liczba parametróœ 10k, 500mln 
 
 rloss = RetinaLoss()
 acc = DigitAccuracy()
 target = TargetDecoder()
 
 acc_add = 0
-
+pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(pytorch_total_params, 'total parameters')
 
 
 for epoch in range(1):

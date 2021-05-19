@@ -15,9 +15,9 @@ class RetinaLoss:
     ) -> Optional[torch.Tensor]: 
         loss_box_regression = 0
         loss_classification = 0 
-        test = SmoothL1Loss()
-        loss_box_regression += test(model_output.box_regression_output[0], model_target.box_regression_target)
-        loss_classification += sigmoid_focal_loss(model_output.classification_output[0], model_target.classification_target, reduction='mean') 
+        smooth = SmoothL1Loss()
+        loss_box_regression += smooth(model_output.box_regression_output, model_target.box_regression_target)
+        loss_classification += sigmoid_focal_loss(model_output.classification_output, model_target.classification_target, reduction='mean') 
 
         if len(model_target.matched_anchors) == 0:
           return None

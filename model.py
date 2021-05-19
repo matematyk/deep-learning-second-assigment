@@ -6,6 +6,7 @@ import torch
 
 ANCHOR_SIZES = [16,19]
 
+#backbone
 class NetConv(nn.Module):
     def __init__(self):
         super(NetConv, self).__init__()
@@ -16,8 +17,8 @@ class NetConv(nn.Module):
         modules.append(nn.ReLU())
         modules.append(nn.MaxPool2d(2))
 
-        modules.append(nn.Conv2d(16, 50, 3, padding=1))
-        modules.append(nn.BatchNorm2d(50))
+        modules.append(nn.Conv2d(16, 256, 3, padding=1))
+        modules.append(nn.BatchNorm2d(256))
         modules.append(nn.ReLU())
         modules.append(nn.MaxPool2d(2))
 
@@ -40,12 +41,16 @@ class Reshape(nn.Module):
         return x.view((x.shape[0],) + self.shape)
 
 class ClassificationHead(nn.Module):
-    def __init__(self, anchors_number):
+    def __init__(self, anchors_numbers):
         super(ClassificationHead, self).__init__()
         modules = nn.ModuleList()
-        modules.append(nn.Flatten())
-        modules.append(nn.Linear(32*32*50, anchors_number*10))
-        modules.append(Reshape(anchors_number,10))
+        #modules.append(nn.Flatten())
+        #modules.append(nn.Linear(32*32*50, anchors_number*10))
+        #(batch_size, in_channels= 256, 32, 32)
+        per_pixel = 1
+        modules.append(nn.Conv2d(in_channels=256, out_channels=(per_pixel*10), kernel_size=1))
+        #(1, 961*10, 32, 32)
+        #modules.append(Reshape(anchors_number,10))
         #modules.append(nn.Softmax(dim=2))
 
 
@@ -53,20 +58,30 @@ class ClassificationHead(nn.Module):
 
     def forward(self, x):
         x = self.layers(x)
-
+        #(1, 961*10, 32, 32)
+        x = x.permute(0,2,3,1)
+        #(1, 32, 32, 961*10)
+        x = x.reshape(-1, 10) 
+        #(1*32*32*961, 10)
         return x
 
 class BoxRegressionHead(nn.Module):
     def __init__(self, anchors_numbers):
         super(BoxRegressionHead, self).__init__()
         modules = nn.ModuleList()
-        modules.append(nn.Flatten())
-        modules.append(nn.Linear(32*32*50, anchors_numbers*4))
-        modules.append(Reshape(anchors_numbers, 4))
+        #modules.append(nn.Flatten())
+        #modules.append(nn.Linear(32*32*50, anchors_numbers*4))
+        per_pixel = 1
+        modules.append(nn.Conv2d(in_channels=256, out_channels=per_pixel*4, kernel_size=1))
+        #modules.append(Reshape(anchors_numbers, 4))
         self.layers = nn.Sequential(*modules)
 
     def forward(self, x):
         x = self.layers(x)
+        #1, filters, 16, 16 = batch_size x liczba x wysoksoc x szeroksoc
+        x = x.permute(0, 2, 3, 1)
+        #batch_size x wysokoscx szerokosc x liczba_kanalow
+        x = x.reshape(-1, 4) # [batch_size x wysoksoc x szeroksoc x liczba_anchorow(15)], 4
 
         return x
 
@@ -91,14 +106,13 @@ class DigitDetectionModel(torch.nn.Module):
     ):
         super().__init__()
         self.netconv = NetConv()
-        for n in range(0, 128//4-1):
-          for m in range(0, 128//4-1):
+        for n in range(0, 128//4):
+          for m in range(0, 128//4):
               self.anchors.append(MnistBox(m*4 - ANCHOR_SIZES[0]/2, n*4 - ANCHOR_SIZES[1]/2, m*4 + ANCHOR_SIZES[1]/2, n*4+ANCHOR_SIZES[0]/2))
 
     def forward(self, x: MnistCanvas) -> DigitDetectionModelOutput:
-        out = self.netconv(x).permute(0,2,3,1)
+        out = self.netconv(x)
         classification_target = ClassificationHead(len(self.anchors))(out)
         box_regression_output = BoxRegressionHead(len(self.anchors))(out)
-
         return DigitDetectionModelOutput(self.anchors, classification_target, box_regression_output)
 
