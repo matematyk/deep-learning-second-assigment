@@ -140,10 +140,12 @@ class MnistCanvas:
             boxes=[],
         )
 
-    def plot(self, boxes: Optional[List[MnistBox]] = None):
+    def plot(self, boxes: Optional[List[MnistBox]] = None, name = '1'):
         fig, ax = plt.subplots()
         ax.imshow(self.image)
         boxes = boxes or self.boxes
         for box in boxes:
             box.plot_on_ax(ax)
-        plt.show()
+        import random
+        plt.savefig(f'{random.randint(1, 100)},{name}.jpg')
+        #plt.show()

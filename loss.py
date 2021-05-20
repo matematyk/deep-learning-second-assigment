@@ -32,15 +32,24 @@ class DigitAccuracy:
         predicted_boxes: List[MnistBox],
         canvas: MnistCanvas,
     ):
+        print(len(canvas.boxes), 'canvas.boxes')
+        print(len(predicted_boxes), 'predicted_boxes')
         for box in canvas.boxes:
           find = False
           for pbox in predicted_boxes:
             if box.iou_with(pbox) > 0.5 and box.class_nb == pbox.class_nb:
               if find: 
+                print('tutaj wchodze')
                 return 0
               find = True
+          if not find:
+            return 0
+        
         if len(canvas.boxes) == len(predicted_boxes):
           return 1
+        
+        
+        print('sprawdzam')
 
         return 0
 

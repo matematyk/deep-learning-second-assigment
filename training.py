@@ -87,8 +87,9 @@ import torch.optim as optim
 
 model = DigitDetectionModel()
 model.to(DEVICE)
+print(DEVICE)
 
-optimizer = optim.Adam(model.parameters(), lr=0.1)
+optimizer = optim.SGD(model.parameters(), lr=2)
 #@TODO, 
 #zbieranie gradientu z wielu sampli
 # liczba parametróœ 10k, 500mln 
@@ -102,33 +103,42 @@ pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_g
 print(pytorch_total_params, 'total parameters')
 
 
-for epoch in range(1):
-    batch_size = 200
-    for i in range(batch_size):
-        optimizer.zero_grad()
-        canvas = get_random_canvas()
+#for epoch in range(1):
+batch_size = 100
+canvas = get_random_canvas()
+for i in range(batch_size):
 
-        outputs = model(canvas.get_torch_tensor())
-        acc_value = acc.compute_metric(target.get_predictions(outputs), canvas)
+    optimizer.zero_grad()
+    #canvas = get_random_canvas()
+    outputs = model(canvas.get_torch_tensor())
+    x = target.get_predictions(outputs)
 
-        targets = target.get_targets(canvas, outputs.anchors, iou_threshold=0.5, nb_of_classes=10)
-        loss = rloss.compute_loss(outputs, targets)
+    acc_value = acc.compute_metric(x, canvas)
+    targets = target.get_targets(canvas, outputs.anchors, iou_threshold=0.5, nb_of_classes=10)
+    if i == 20 or i == 40 or i == 60 or i == 99:
+        canvas.plot(boxes=x, name=i)
+    #print(x)
+   # print(outputs.classification_output)
+    #print(outputs.box_regression_output)
 
-        print('treningowe accuracy:', acc_value)
-        print('loss', loss)
-        loss.backward()
-        optimizer.step()
-        acc_add+=acc_value
+    loss = rloss.compute_loss(outputs, targets)
 
-    acc_valid = 0
-    with torch.no_grad():
-        for canvas in TEST_CANVAS:
-            outputs = model(canvas.get_torch_tensor())
-            acc_value = acc.compute_metric(target.get_predictions(outputs), canvas)
-            loss = rloss.compute_loss(outputs, targets)
-            print('valid_loss', loss)
-            print('acc_loss', acc_value)
-            acc_valid += acc_value
+    print('treningowe accuracy:', acc_value)
+    print('hello')
+    print('loss', loss)
+    loss.backward()
+    optimizer.step()
+    acc_add+=acc_value
 
-    print('Accuracy of the network on the {} test images: {} %'.format(
-        1, acc_valid))
+    #acc_valid = 0
+    #with torch.no_grad():
+    #    for canvas in TEST_CANVAS:
+    #        outputs = model(canvas.get_torch_tensor())
+    #        acc_value = acc.compute_metric(target.get_predictions(outputs), canvas)
+    #        loss = rloss.compute_loss(outputs, targets)
+    #        print('valid_loss', loss)
+    #        print('acc_loss', acc_value)
+    #        acc_valid += acc_value
+
+    #print('Accuracy of the network on the {} test images: {} %'.format(
+    #    1, acc_valid))

@@ -13,12 +13,12 @@ class NetConv(nn.Module):
         modules = []
 
         modules.append(nn.Conv2d(1, 16, 3, padding=1))
-        modules.append(nn.BatchNorm2d(16))
+        #modules.append(nn.BatchNorm2d(16))
         modules.append(nn.ReLU())
         modules.append(nn.MaxPool2d(2))
 
         modules.append(nn.Conv2d(16, 256, 3, padding=1))
-        modules.append(nn.BatchNorm2d(256))
+        #modules.append(nn.BatchNorm2d(256))
         modules.append(nn.ReLU())
         modules.append(nn.MaxPool2d(2))
 
@@ -106,13 +106,15 @@ class DigitDetectionModel(torch.nn.Module):
     ):
         super().__init__()
         self.netconv = NetConv()
+        self.classification_target = ClassificationHead(10)
+        self.box_regression_output =  BoxRegressionHead(10)
         for n in range(0, 128//4):
           for m in range(0, 128//4):
               self.anchors.append(MnistBox(m*4 - ANCHOR_SIZES[0]/2, n*4 - ANCHOR_SIZES[1]/2, m*4 + ANCHOR_SIZES[1]/2, n*4+ANCHOR_SIZES[0]/2))
 
     def forward(self, x: MnistCanvas) -> DigitDetectionModelOutput:
         out = self.netconv(x)
-        classification_target = ClassificationHead(len(self.anchors))(out)
-        box_regression_output = BoxRegressionHead(len(self.anchors))(out)
+        classification_target = self.classification_target(out)
+        box_regression_output = self.box_regression_output(out)
         return DigitDetectionModelOutput(self.anchors, classification_target, box_regression_output)
 
